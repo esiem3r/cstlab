@@ -13,12 +13,13 @@ Doctest quick‑check:
 >>> sorted(shell_Linf(2))[:4]
 [(-2, -2), (-2, -1), (-2, 0), (-2, 1)]
 """
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from math import isqrt
-from typing import Iterable, Tuple
 
-Point = Tuple[int, int]
+Point: tuple[int, int]
 
 
 # ----------------------------------------------------------------------
@@ -82,13 +83,13 @@ def shell_Linf(r: int) -> Iterable[Point]:
         return
     x = -r
     for y in range(-r, r):
-        yield (x, y)              # left edge
+        yield (x, y)  # left edge
     for x in range(-r, r):
-        yield (x, r)              # top edge
+        yield (x, r)  # top edge
     for y in range(r, -r, -1):
-        yield (r, y)              # right edge
+        yield (r, y)  # right edge
     for x in range(r, -r, -1):
-        yield (x, -r)             # bottom edge
+        yield (x, -r)  # bottom edge
 
 
 def shell_L1(r: int) -> Iterable[Point]:
