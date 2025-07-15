@@ -1,8 +1,9 @@
 """
-geometry.py – spiral / shell utilities for Carry‑Symmetric Topology
+geometry.py – spiral / shell utilities for Carry‑Symmetric Topology
 ------------------------------------------------------------------
 
-Doctest sanity:
+Doctest sanity
+--------------
 
 >>> spiral_index((0, 0))
 0
@@ -25,28 +26,27 @@ Point = tuple[int, int]  # canonical lattice‑point type
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Helper: infinite generator of square‑spiral coordinates (clockwise)
+# Infinite generator of square‑spiral coordinates (clockwise)
 # ──────────────────────────────────────────────────────────────────────────────
 def _spiral_coords() -> Iterable[Point]:
-    """Yield lattice points in square‑spiral order (clockwise, starting at origin)."""
     x = y = 0
-    yield (0, 0)  # index 0
+    yield (0, 0)  # index 0
     step = 1
     while True:
-        # Right  → (step)
+        # → right
         for _ in range(step):
             x += 1
             yield (x, y)
-        # Up     ↑ (step)
+        # ↑ up
         for _ in range(step):
             y += 1
             yield (x, y)
         step += 1
-        # Left   ← (step)
+        # ← left
         for _ in range(step):
             x -= 1
             yield (x, y)
-        # Down   ↓ (step)
+        # ↓ down
         for _ in range(step):
             y -= 1
             yield (x, y)
@@ -54,47 +54,44 @@ def _spiral_coords() -> Iterable[Point]:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Index maps  (simple enumeration – plenty fast for r ≤ 30 used in tests)
+# Index maps (O(index) enumeration – fine for r ≤ 30 in tests)
 # ──────────────────────────────────────────────────────────────────────────────
-def spiral_index(pt: Point) -> int:  # noqa: D401
-    """Return the spiral index of *pt* (O(index) enumeration, but index ≤ 3 700 in tests)."""
+def spiral_index(pt: Point) -> int:
+    """Return the spiral index of *pt* (enumerative, but fast for test sizes)."""
+    target_r = max(abs(pt[0]), abs(pt[1]))
     for idx, p in enumerate(_spiral_coords()):
         if p == pt:
             return idx
-        # Safe‑guard: break once radius surely larger than pt’s Chebyshev radius
-        if max(abs(*p)) > max(abs(pt[0]), abs(pt[1])) + 1:
+        # once radius exceeds target + 1 we can safely keep searching
+        if max(abs(p[0]), abs(p[1])) > target_r + 1:
             continue
+    raise RuntimeError("Point not found (should be unreachable)")
 
 
 def inverse_index(n: int) -> Point:
-    """Return the lattice point at spiral position *n* (O(n) but n ≤ 3 700 in tests)."""
+    """Return lattice point at spiral position *n* (enumerative, but n ≤ 3 700 in tests)."""
     return next(islice(_spiral_coords(), n, None))
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Shell generators (your original versions kept intact)
+# Shell generators (from your original implementation)
 # ──────────────────────────────────────────────────────────────────────────────
 def shell_Linf(r: int) -> Iterable[Point]:
     if r == 0:
         yield (0, 0)
         return
     k = r
-    # right edge
-    for y in range(-k + 1, k + 1):
+    for y in range(-k + 1, k + 1):  # right edge
         yield (k, y)
-    # top edge
-    for x in range(k - 1, -k - 1, -1):
+    for x in range(k - 1, -k - 1, -1):  # top edge
         yield (x, k)
-    # left edge
-    for y in range(k - 1, -k - 1, -1):
+    for y in range(k - 1, -k - 1, -1):  # left edge
         yield (-k, y)
-    # bottom edge
-    for x in range(-k + 1, k):
+    for x in range(-k + 1, k):  # bottom edge
         yield (x, -k)
 
 
-def shell_size_Linf(r: int) -> int:  # noqa: D401
-    """Number of lattice points on a Chebyshev shell."""
+def shell_size_Linf(r: int) -> int:
     return 1 if r == 0 else 8 * r
 
 
@@ -105,5 +102,5 @@ def shell_L1(r: int) -> Iterable[Point]:
     for x in range(-r, r + 1):
         y = r - abs(x)
         yield (x, y)
-        if y != 0:
+        if y:
             yield (x, -y)
