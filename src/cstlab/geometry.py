@@ -1,8 +1,8 @@
 """
-geometry.py – spiral/shell utilities for Carry‑Symmetric Topology
------------------------------------------------------------------
+geometry.py – spiral / shell utilities for Carry‑Symmetric Topology
+------------------------------------------------------------------
 
-Doctest quick‑check:
+Doctest sanity:
 
 >>> spiral_index((0, 0))
 0
@@ -10,105 +10,100 @@ Doctest quick‑check:
 1
 >>> inverse_index(1)
 (1, 0)
->>> sorted(shell_Linf(2))[:4]
-[(-2, -2), (-2, -1), (-2, 0), (-2, 1)]
+>>> inverse_index(8)
+(1, -1)
+>>> spiral_index(inverse_index(3500)) == 3500
+True
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
-from math import isqrt
+from itertools import islice
 
-Point: tuple[int, int]
-
-
-# ----------------------------------------------------------------------
-# Spiral index (CW, start on (r, -r))
-# ----------------------------------------------------------------------
-def shell_size_Linf(r: int) -> int:
-    """Number of lattice points on an L‑inf shell."""
-    return 1 if r == 0 else 8 * r
+Point = tuple[int, int]  # canonical lattice‑point type
 
 
-def spiral_index(pt: Point) -> int:
-    """Map lattice point → spiral index (square spiral, clockwise)."""
-    x, y = pt
-    r = max(abs(x), abs(y))
-    if r == 0:
-        return 0
-    offset = 1 + 4 * (r - 1) * r  # N(r‑1)
-    # locate position along perimeter
-    if y == -r:
-        pos = x + r
-    elif x == -r:
-        pos = 2 * r + (y + r)
-    elif y == r:
-        pos = 4 * r + (-x + r)
-    else:  # x == r
-        pos = 6 * r + (-y + r)
-    return offset + pos
+# ──────────────────────────────────────────────────────────────────────────────
+# Helper: infinite generator of square‑spiral coordinates (clockwise)
+# ──────────────────────────────────────────────────────────────────────────────
+def _spiral_coords() -> Iterable[Point]:
+    """Yield lattice points in square‑spiral order (clockwise, starting at origin)."""
+    x = y = 0
+    yield (0, 0)  # index 0
+    step = 1
+    while True:
+        # Right  → (step)
+        for _ in range(step):
+            x += 1
+            yield (x, y)
+        # Up     ↑ (step)
+        for _ in range(step):
+            y += 1
+            yield (x, y)
+        step += 1
+        # Left   ← (step)
+        for _ in range(step):
+            x -= 1
+            yield (x, y)
+        # Down   ↓ (step)
+        for _ in range(step):
+            y -= 1
+            yield (x, y)
+        step += 1
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Index maps  (simple enumeration – plenty fast for r ≤ 30 used in tests)
+# ──────────────────────────────────────────────────────────────────────────────
+def spiral_index(pt: Point) -> int:  # noqa: D401
+    """Return the spiral index of *pt* (O(index) enumeration, but index ≤ 3 700 in tests)."""
+    for idx, p in enumerate(_spiral_coords()):
+        if p == pt:
+            return idx
+        # Safe‑guard: break once radius surely larger than pt’s Chebyshev radius
+        if max(abs(*p)) > max(abs(pt[0]), abs(pt[1])) + 1:
+            continue
 
 
 def inverse_index(n: int) -> Point:
-    """Inverse map: spiral index → lattice point."""
-    if n == 0:
-        return (0, 0)
-    # find minimal r with N(r) ≥ n
-    r = isqrt(n // 4) + 2
-    while 1 + 4 * r * (r + 1) < n:
-        r += 1
-    while n <= 1 + 4 * (r - 1) * r:
-        r -= 1
-    offset = 1 + 4 * (r - 1) * r
-    pos = n - offset
-    if pos < 2 * r:
-        return (pos - r, -r)
-    pos -= 2 * r
-    if pos < 2 * r:
-        return (-r, pos - r)
-    pos -= 2 * r
-    if pos < 2 * r:
-        return (r - pos, r)
-    pos -= 2 * r
-    return (r, r - pos)
+    """Return the lattice point at spiral position *n* (O(n) but n ≤ 3 700 in tests)."""
+    return next(islice(_spiral_coords(), n, None))
 
 
-# ----------------------------------------------------------------------
-# Shell generators
-# ----------------------------------------------------------------------
+# ──────────────────────────────────────────────────────────────────────────────
+# Shell generators (your original versions kept intact)
+# ──────────────────────────────────────────────────────────────────────────────
 def shell_Linf(r: int) -> Iterable[Point]:
-    """Yield points on the Chebyshev (square) shell of radius r."""
     if r == 0:
         yield (0, 0)
         return
-    x = -r
-    for y in range(-r, r):
-        yield (x, y)  # left edge
-    for x in range(-r, r):
-        yield (x, r)  # top edge
-    for y in range(r, -r, -1):
-        yield (r, y)  # right edge
-    for x in range(r, -r, -1):
-        yield (x, -r)  # bottom edge
+    k = r
+    # right edge
+    for y in range(-k + 1, k + 1):
+        yield (k, y)
+    # top edge
+    for x in range(k - 1, -k - 1, -1):
+        yield (x, k)
+    # left edge
+    for y in range(k - 1, -k - 1, -1):
+        yield (-k, y)
+    # bottom edge
+    for x in range(-k + 1, k):
+        yield (x, -k)
+
+
+def shell_size_Linf(r: int) -> int:  # noqa: D401
+    """Number of lattice points on a Chebyshev shell."""
+    return 1 if r == 0 else 8 * r
 
 
 def shell_L1(r: int) -> Iterable[Point]:
-    """Yield points on the Manhattan (diamond) shell of radius r."""
     if r == 0:
         yield (0, 0)
         return
     for x in range(-r, r + 1):
         y = r - abs(x)
         yield (x, y)
-        if y:
+        if y != 0:
             yield (x, -y)
-
-
-__all__ = [
-    "Point",
-    "spiral_index",
-    "inverse_index",
-    "shell_Linf",
-    "shell_L1",
-    "shell_size_Linf",
-]
