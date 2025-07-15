@@ -1,12 +1,43 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "cstlab"
 version = "0.0.0"
-authors = [{name="Your Name"}]
 description = "Carry‑Symmetric Topology reference implementation"
+authors = [{ name = "Your Name", email = "you@example.com"}]
+license = { text = "MIT" }
 readme = "README.md"
-license = {text = "MIT"}
 requires-python = ">=3.9"
+dependencies = [
+    # runtime deps (none yet)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=4",
+    "black>=24.3",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pre-commit>=3.6",
+]
+docs = [
+    "sphinx>=7.3",
+    "furo>=2024.5",
+    "myst-parser>=2.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
