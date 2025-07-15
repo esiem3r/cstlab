@@ -1,6 +1,6 @@
 """
-geometry.py – spiral / shell utilities for Carry‑Symmetric Topology
-------------------------------------------------------------------
+geometry.py – spiral/shell utilities for Carry‑Symmetric Topology
+-----------------------------------------------------------------
 
 Doctest quick‑check:
 
@@ -14,28 +14,29 @@ Doctest quick‑check:
 [(-2, -2), (-2, -1), (-2, 0), (-2, 1)]
 """
 from __future__ import annotations
+
 from math import isqrt
 from typing import Iterable, Tuple
 
 Point = Tuple[int, int]
 
-# --------------------------------------------------------------------
-# Spiral index (CW, start at (0,0) then (1,0) CCW order)
-# --------------------------------------------------------------------
 
-
+# ----------------------------------------------------------------------
+# Spiral index (CW, start on (r, -r))
+# ----------------------------------------------------------------------
 def shell_size_Linf(r: int) -> int:
+    """Number of lattice points on an L‑inf shell."""
     return 1 if r == 0 else 8 * r
 
 
 def spiral_index(pt: Point) -> int:
+    """Map lattice point → spiral index (square spiral, clockwise)."""
     x, y = pt
     r = max(abs(x), abs(y))
     if r == 0:
         return 0
-    # label offset up to previous shell
-    offset = 1 + 4 * (r - 1) * r  # N(r-1)
-    # position within shell (counter‑clockwise starting at (r,‑r+1))
+    offset = 1 + 4 * (r - 1) * r  # N(r‑1)
+    # locate position along perimeter
     if y == -r:
         pos = x + r
     elif x == -r:
@@ -48,12 +49,11 @@ def spiral_index(pt: Point) -> int:
 
 
 def inverse_index(n: int) -> Point:
+    """Inverse map: spiral index → lattice point."""
     if n == 0:
         return (0, 0)
-    # solve for r from N(r-1) < n <= N(r)
-    # N(r) = 1 + 4 r (r + 1)
-    # approximate r ≈ sqrt(n/4)
-    r = isqrt(n // 4) + 2  # overshoot a little
+    # find minimal r with N(r) ≥ n
+    r = isqrt(n // 4) + 2
     while 1 + 4 * r * (r + 1) < n:
         r += 1
     while n <= 1 + 4 * (r - 1) * r:
@@ -72,27 +72,27 @@ def inverse_index(n: int) -> Point:
     return (r, r - pos)
 
 
-# --------------------------------------------------------------------
+# ----------------------------------------------------------------------
 # Shell generators
-# --------------------------------------------------------------------
-
-
+# ----------------------------------------------------------------------
 def shell_Linf(r: int) -> Iterable[Point]:
+    """Yield points on the Chebyshev (square) shell of radius r."""
     if r == 0:
         yield (0, 0)
         return
     x = -r
     for y in range(-r, r):
-        yield (x, y)  # left edge
+        yield (x, y)              # left edge
     for x in range(-r, r):
-        yield (x, r)  # top
+        yield (x, r)              # top edge
     for y in range(r, -r, -1):
-        yield (r, y)  # right
+        yield (r, y)              # right edge
     for x in range(r, -r, -1):
-        yield (x, -r)  # bottom
+        yield (x, -r)             # bottom edge
 
 
 def shell_L1(r: int) -> Iterable[Point]:
+    """Yield points on the Manhattan (diamond) shell of radius r."""
     if r == 0:
         yield (0, 0)
         return
