@@ -1,14 +1,14 @@
-# Carry‑Symmetric Topology (`cstlab`) &nbsp; ![CI](https://github.com/esiem3r/cstlab/actions/workflows/ci.yml/badge.svg)
+# Carry-Symmetric Topology (`cstlab`) ![CI](https://github.com/esiem3r/cstlab/actions/workflows/ci.yml/badge.svg)
 
-*Reference implementation + proofs for the Carry‑Symmetric Topology programme.*
+Reference implementation for Carry-Symmetric Topology lattice utilities.
 
 ```bash
-pip install -e '.[dev]'              # editable install with dev tools
-python -m pytest -q                  # run test‑suite
+pip install -e '.[dev]'
+python -m pytest -q
 python - <<'PY'
-from cstlab.geometry import spiral_index, inverse_index
-print(spiral_index((7, -3)))         # demo
+from cstlab.geometry import inverse_index, spiral_index
+
+print(spiral_index((7, -3)))
+print(inverse_index(spiral_index((7, -3))))
 PY
-
-
-MD
+```

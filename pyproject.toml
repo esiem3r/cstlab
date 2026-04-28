@@ -5,8 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cstlab"
 version = "0.0.0"
-description = "Carry‑Symmetric Topology reference implementation"
-authors = [{ name = "Your Name", email = "you@example.com"}]
+description = "Carry-Symmetric Topology reference implementation"
+authors = [{ name = "esiem3r" }]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.9"
@@ -36,6 +36,8 @@ target-version = ["py39"]
 [tool.ruff]
 line-length = 88
 target-version = "py39"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 
 [tool.mypy]

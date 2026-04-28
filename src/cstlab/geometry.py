@@ -1,103 +1,48 @@
-"""
-geometry.py – spiral / shell utilities for Carry‑Symmetric Topology
-------------------------------------------------------------------
-
-Doctest sanity
---------------
-
->>> spiral_index((0, 0))
-0
->>> spiral_index((1, 0))
-1
->>> inverse_index(1)
-(1, 0)
->>> inverse_index(8)
-(1, -1)
->>> spiral_index(inverse_index(3500)) == 3500
-True
-"""
+"""Spiral and shell utilities for Carry-Symmetric Topology."""
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from itertools import islice
+from collections.abc import Iterator
+from math import isqrt
 
-Point = tuple[int, int]  # canonical lattice‑point type
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Infinite generator of square‑spiral coordinates (clockwise)
-# ──────────────────────────────────────────────────────────────────────────────
-def _spiral_coords() -> Iterable[Point]:
-    x = y = 0
-    yield (0, 0)  # index 0
-    step = 1
-    while True:
-        # → right
-        for _ in range(step):
-            x += 1
-            yield (x, y)
-        # ↑ up
-        for _ in range(step):
-            y += 1
-            yield (x, y)
-        step += 1
-        # ← left
-        for _ in range(step):
-            x -= 1
-            yield (x, y)
-        # ↓ down
-        for _ in range(step):
-            y -= 1
-            yield (x, y)
-        step += 1
+Point = tuple[int, int]
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Index maps  (enumerative – fine for r ≤ 30 in tests)
-# ──────────────────────────────────────────────────────────────────────────────
-def spiral_index(pt: Point) -> int:
-    """Return the spiral index of *pt* (O(index) enumeration; fine for tests)."""
-    target_r = max(abs(pt[0]), abs(pt[1]))
-    for idx, p in enumerate(_spiral_coords()):
-        if p == pt:
-            return idx
-        if max(abs(p[0]), abs(p[1])) > target_r + 1:
-            continue
-    raise RuntimeError("Point not found (logic error)")
-
-
-def inverse_index(n: int) -> Point:
-    """Return lattice point at spiral position *n* (enumerative, but n ≤ 3 700)."""
-    return next(islice(_spiral_coords(), n, None))
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Shell generators
-# ──────────────────────────────────────────────────────────────────────────────
-def shell_Linf(r: int) -> Iterable[Point]:
-    if r == 0:
-        yield (0, 0)
-        return
-    k = r
-    for y in range(-k + 1, k + 1):  # right edge
-        yield (k, y)
-    for x in range(k - 1, -k - 1, -1):  # top edge
-        yield (x, k)
-    for y in range(k - 1, -k - 1, -1):  # left edge
-        yield (-k, y)
-    for x in range(-k + 1, k):  # bottom edge
-        yield (x, -k)
+def _check_nonnegative_radius(r: int) -> None:
+    if r < 0:
+        raise ValueError("radius must be nonnegative")
 
 
 def shell_size_Linf(r: int) -> int:
+    """Return the number of lattice points on the L-infinity shell of radius r."""
+    _check_nonnegative_radius(r)
     return 1 if r == 0 else 8 * r
 
 
-def shell_L1(r: int) -> Iterable[Point]:
+def shell_Linf(r: int) -> Iterator[Point]:
+    """Yield the L-infinity shell in the same order used by the spiral index."""
+    _check_nonnegative_radius(r)
     if r == 0:
         yield (0, 0)
         return
+
+    for y in range(-r + 1, r + 1):
+        yield (r, y)
+    for x in range(r - 1, -r - 1, -1):
+        yield (x, r)
+    for y in range(r - 1, -r - 1, -1):
+        yield (-r, y)
+    for x in range(-r + 1, r + 1):
+        yield (x, -r)
+
+
+def shell_L1(r: int) -> Iterator[Point]:
+    """Yield the L1 shell of radius r."""
+    _check_nonnegative_radius(r)
+    if r == 0:
+        yield (0, 0)
+        return
+
     for x in range(-r, r + 1):
         y = r - abs(x)
         yield (x, y)
@@ -105,105 +50,45 @@ def shell_L1(r: int) -> Iterable[Point]:
             yield (x, -y)
 
 
-"""
-geometry.py – spiral / shell utilities for Carry‑Symmetric Topology
-------------------------------------------------------------------
-
-Doctest sanity
---------------
-
->>> spiral_index((0, 0))
-0
->>> spiral_index((1, 0))
-1
->>> inverse_index(1)
-(1, 0)
->>> inverse_index(8)
-(1, -1)
->>> spiral_index(inverse_index(3500)) == 3500
-True
-"""
-
-from __future__ import annotations
-
-Point = tuple[int, int]  # canonical lattice‑point type
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Infinite generator of square‑spiral coordinates (clockwise)
-# ──────────────────────────────────────────────────────────────────────────────
-def _spiral_coords() -> Iterable[Point]:
-    x = y = 0
-    yield (0, 0)  # index 0
-    step = 1
-    while True:
-        # → right
-        for _ in range(step):
-            x += 1
-            yield (x, y)
-        # ↑ up
-        for _ in range(step):
-            y += 1
-            yield (x, y)
-        step += 1
-        # ← left
-        for _ in range(step):
-            x -= 1
-            yield (x, y)
-        # ↓ down
-        for _ in range(step):
-            y -= 1
-            yield (x, y)
-        step += 1
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Index maps  (enumerative – fine for r ≤ 30 in tests)
-# ──────────────────────────────────────────────────────────────────────────────
 def spiral_index(pt: Point) -> int:
-    """Return the spiral index of *pt* (O(index) enumeration; fine for tests)."""
-    target_r = max(abs(pt[0]), abs(pt[1]))
-    for idx, p in enumerate(_spiral_coords()):
-        if p == pt:
-            return idx
-        if max(abs(p[0]), abs(p[1])) > target_r + 1:
-            continue
-    raise RuntimeError("Point not found (logic error)")
+    """Return the clockwise square-spiral index of a lattice point."""
+    x, y = pt
+    r = max(abs(x), abs(y))
+    if r == 0:
+        return 0
+
+    shell_start = (2 * r - 1) ** 2
+    segment_len = 2 * r
+
+    if x == r and y >= -r + 1:
+        offset = y + r - 1
+    elif y == r and x <= r - 1:
+        offset = segment_len + (r - 1 - x)
+    elif x == -r and y <= r - 1:
+        offset = 2 * segment_len + (r - 1 - y)
+    elif y == -r and x >= -r + 1:
+        offset = 3 * segment_len + (x + r - 1)
+    else:
+        raise ValueError(f"{pt!r} is not on its inferred shell")
+
+    return shell_start + offset
 
 
 def inverse_index(n: int) -> Point:
-    """Return lattice point at spiral position *n* (enumerative, but n ≤ 3 700)."""
-    return next(islice(_spiral_coords(), n, None))
+    """Return the lattice point at clockwise square-spiral index n."""
+    if n < 0:
+        raise ValueError("index must be nonnegative")
+    if n == 0:
+        return (0, 0)
 
+    r = (isqrt(n) + 1) // 2
+    offset = n - (2 * r - 1) ** 2
+    segment_len = 2 * r
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Shell generators
-# ──────────────────────────────────────────────────────────────────────────────
-def shell_Linf(r: int) -> Iterable[Point]:
-    if r == 0:
-        yield (0, 0)
-        return
-    k = r
-    for y in range(-k + 1, k + 1):  # right edge
-        yield (k, y)
-    for x in range(k - 1, -k - 1, -1):  # top edge
-        yield (x, k)
-    for y in range(k - 1, -k - 1, -1):  # left edge
-        yield (-k, y)
-    for x in range(-k + 1, k):  # bottom edge
-        yield (x, -k)
-
-
-def shell_size_Linf(r: int) -> int:
-    return 1 if r == 0 else 8 * r
-
-
-def shell_L1(r: int) -> Iterable[Point]:
-    if r == 0:
-        yield (0, 0)
-        return
-    for x in range(-r, r + 1):
-        y = r - abs(x)
-        yield (x, y)
-        if y:
-            yield (x, -y)
+    if offset < segment_len:
+        return (r, -r + 1 + offset)
+    if offset < 2 * segment_len:
+        return (r - 1 - (offset - segment_len), r)
+    if offset < 3 * segment_len:
+        return (-r, r - 1 - (offset - 2 * segment_len))
+    return (-r + 1 + (offset - 3 * segment_len), -r)
